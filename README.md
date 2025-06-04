@@ -58,40 +58,32 @@ enum class ENodeRelationType : uint8
     Emotional        // 情绪关联 - NumericalCapability
 };
 ```
-4. 管理系统
+### 4. 管理系统
 
-ANodeSystemManager - 统一管理所有节点和连接
-USimpleNodeDataConverter - JSON数据转换
-AJSONTest - 测试Actor
+- `ANodeSystemManager` - 统一管理所有节点和连接
+- `USimpleNodeDataConverter` - JSON数据转换
+- `AJSONTest` - 测试Actor
 
-##已解决的问题
-
-
+## 已解决的问题
 
 
 
-##待完成功能
+## 待完成功能
 
-###能力系统测试
+1. **能力系统测试**
+    - 需要创建DataTable配置
+    - 需要在ItemNode中应用能力配置
+2. **AI集成**
+    - 故事生成API接入
+    - 音乐生成系统集成
+3. **情绪系统深化**
+    - 情绪传播机制
+    - 情绪对游戏的影响
 
-需要创建DataTable配置
-需要在ItemNode中应用能力配置
+## 关键文件路径
 
+```
 
-###AI集成
-
-故事生成API接入
-音乐生成系统集成
-
-
-###情绪系统深化
-
-情绪传播机制
-情绪对游戏的影响
-
-
-
-##关键文件路径
 Source/MyProject/
 ├── Core/NodeDataTypes.h              # 核心数据类型
 ├── Nodes/
@@ -101,7 +93,7 @@ Source/MyProject/
 │   ├── NodeConnection.h/cpp         # 节点连接
 │   ├── NodeSystemManager.h/cpp      # 系统管理器
 │   └── Capabilities/                # 六大能力
-│       ├── ItemCapability.h/cpp     
+│       ├── ItemCapability.h/cpp
 │       ├── SpatialCapability.h/cpp
 │       ├── StateCapability.h/cpp
 │       ├── InteractiveCapability.h/cpp
@@ -112,7 +104,10 @@ Source/MyProject/
 │   └── SimpleNodeDataConverter.h/cpp # JSON转换
 └── Test/
     └── JSONTest.h/cpp               # 测试Actor
-###测试配置
 
-测试JSON: test_simple_scene.json
-包含1个场景节点，3个物品节点，1个前置条件关系
+```
+
+## 测试配置
+
+- 测试JSON: `test_simple_scene.json`
+- 包含1个场景节点，3个物品节点，1个前置条件关系
