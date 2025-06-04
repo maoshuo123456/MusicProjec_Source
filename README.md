@@ -57,6 +57,7 @@ enum class ENodeRelationType : uint8
     Sequence,        // 顺序关系 - NarrativeCapability
     Emotional        // 情绪关联 - NumericalCapability
 };
+```
 4. 管理系统
 
 ANodeSystemManager - 统一管理所有节点和连接
