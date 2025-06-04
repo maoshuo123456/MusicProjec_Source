@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Player/PlayerInteractionManager.h"
 #include "MyProjectCharacter.generated.h"
 
 class UInputComponent;
@@ -39,7 +40,9 @@ class AMyProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
 
-	
+	//交互节点管理器
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interaction, meta = (AllowPrivateAccess = "true"))
+	class UPlayerInteractionManager* InteractionManager;
 public:
 	AMyProjectCharacter();
 
@@ -51,6 +54,18 @@ public:
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
+
+	/** Mouse Left Button Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MouseLeftButtonAction;
+
+	/** Mouse Right Button Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MouseRightButtonAction;
+
+	/** Mouse Move Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MouseMoveAction;
 
 	/** Bool for AnimBP to switch to another animation set */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
@@ -70,6 +85,15 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	/** Called for mouse button input */
+	void OnMouseLeftButtonPressed();
+	void OnMouseLeftButtonReleased();
+	void OnMouseRightButtonPressed();
+	void OnMouseRightButtonReleased();
+    
+	/** Called for mouse movement */
+	void OnMouseMoved(const FInputActionValue& Value);
 
 protected:
 	// APawn interface

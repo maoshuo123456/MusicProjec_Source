@@ -303,6 +303,9 @@ struct FInteractiveCapabilityConfig
 {
     GENERATED_BODY()
 
+    UPROPERTY(EditAnywhere,BlueprintReadWrite)
+    TArray<EInteractionType> AllowedInteractions;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TMap<FString, FString> DialogueOptions;
 
