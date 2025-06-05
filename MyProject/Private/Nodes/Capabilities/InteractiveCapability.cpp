@@ -66,12 +66,16 @@ bool UInteractiveCapability::CanUse_Implementation(const FInteractionData& Data)
     switch (Data.InteractionType)
     {
     case EInteractionType::Click:
-        // 点击可以触发对话或观察
-        return DialogueOptions.Num() > 0 || ObservableInfo.Num() > 0;
+        return true;
         
     case EInteractionType::Drag:
-        // 拖拽可能用于物品交换
-        return GivableItems.Num() > 0 || AcceptableItems.Num() > 0;
+        return true;
+        
+    case EInteractionType::Hold:
+        return true; 
+        
+        case EInteractionType::Hover:
+            return ObservableInfo.Num() > 0;
         
     default:
         return true;

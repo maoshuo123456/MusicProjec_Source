@@ -37,7 +37,7 @@ AInteractiveNode::AInteractiveNode()
 
     // 默认值
     bIsInteractable = true;
-    InteractionRange = 300.0f;
+    InteractionRange = 100000.0f;
     UIDisplayDistance = 1000.0f;
     bAlwaysShowUI = false;
     CurrentState = ENodeState::Inactive;

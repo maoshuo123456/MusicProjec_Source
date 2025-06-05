@@ -21,6 +21,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Converter")
 	static bool LoadAndConvertJSONFile(const FString& FilePath, TArray<FNodeGenerateData>& OutNodeData, TArray<FNodeRelationData>& OutRelations);
 
+	// 交互能力解析方法
+	static bool ParseCapabilityObject(const TSharedPtr<FJsonObject>& CapabilityObject, FCapabilityData& OutData);
+	static EInteractionType StringToInteractionType(const FString& TypeString);
+	static TArray<EInteractionType> ParseInteractionTypes(const TArray<TSharedPtr<FJsonValue>>& JsonArray);
+	static void ParseInteractiveConfig(const TSharedPtr<FJsonObject>& ConfigObject, FInteractiveCapabilityConfig& OutConfig);
 private:
 	// 解析方法
 	static bool ParseNodeObject(const TSharedPtr<FJsonObject>& NodeObject, FNodeGenerateData& OutData);

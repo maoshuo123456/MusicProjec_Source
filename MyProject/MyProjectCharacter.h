@@ -8,6 +8,7 @@
 #include "Player/PlayerInteractionManager.h"
 #include "MyProjectCharacter.generated.h"
 
+class UPlayerInteractionManager;
 class UInputComponent;
 class USkeletalMeshComponent;
 class USceneComponent;
@@ -41,7 +42,7 @@ class AMyProjectCharacter : public ACharacter
 	class UInputAction* MoveAction;
 
 	//交互节点管理器
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interaction, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Interaction, meta = (AllowPrivateAccess = "true"))
 	class UPlayerInteractionManager* InteractionManager;
 public:
 	AMyProjectCharacter();

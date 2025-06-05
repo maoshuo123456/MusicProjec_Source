@@ -107,6 +107,25 @@ bool USimpleNodeDataConverter::ParseNodeObject(const TSharedPtr<FJsonObject>& No
             OutData.SpawnTransform.SetLocation(ParseLocation(*LocationObject));
         }
     }
+
+    // 解析capabilities数组
+    const TArray<TSharedPtr<FJsonValue>>* CapabilitiesArray;
+    if (NodeObject->TryGetArrayField(TEXT("capabilities"), CapabilitiesArray))
+    {
+        for (const TSharedPtr<FJsonValue>& CapabilityValue : *CapabilitiesArray)
+        {
+            const TSharedPtr<FJsonObject>& CapabilityObject = CapabilityValue->AsObject();
+            if (CapabilityObject.IsValid())
+            {
+                FCapabilityData CapabilityData;
+                if (ParseCapabilityObject(CapabilityObject, CapabilityData))
+                {
+                    OutData.Capabilities.Add(CapabilityData);
+                    UE_LOG(LogTemp, Log, TEXT("Parsed capability: %s"), *CapabilityData.CapabilityID);
+                }
+            }
+        }
+    }
     
     // 根据类型设置默认的NodeClass（这里需要实际的类引用）
     // 在实际使用中，这些类应该通过某种注册机制获取
@@ -228,4 +247,140 @@ ENodeRelationType USimpleNodeDataConverter::StringToRelationType(const FString& 
     }
     
     return ENodeRelationType::Dependency; // 默认
+}
+
+bool USimpleNodeDataConverter::ParseCapabilityObject(const TSharedPtr<FJsonObject>& CapabilityObject, FCapabilityData& OutData)
+{
+    if (!CapabilityObject.IsValid())
+    {
+        return false;
+    }
+    
+    // 解析能力类型
+    FString TypeString;
+    CapabilityObject->TryGetStringField(TEXT("type"), TypeString);
+    
+    if (TypeString.Equals(TEXT("interactive"), ESearchCase::IgnoreCase))
+    {
+        OutData.CapabilityType = ECapabilityType::Interactive;
+        
+        // 解析配置
+        const TSharedPtr<FJsonObject>* ConfigObject;
+        if (CapabilityObject->TryGetObjectField(TEXT("config"), ConfigObject) && ConfigObject->IsValid())
+        {
+            ParseInteractiveConfig(*ConfigObject, OutData.InteractiveConfig);
+        }
+    }
+    else if (TypeString.Equals(TEXT("spatial"), ESearchCase::IgnoreCase))
+    {
+        OutData.CapabilityType = ECapabilityType::Spatial;
+        // 可以继续添加其他能力类型的解析
+    }
+    // 添加其他能力类型...
+    
+    // 设置通用属性
+    OutData.CapabilityID = TypeString + TEXT("_capability");
+    OutData.bAutoActivate = true;
+    
+    return OutData.CapabilityType != ECapabilityType::None;
+}
+
+void USimpleNodeDataConverter::ParseInteractiveConfig(const TSharedPtr<FJsonObject>& ConfigObject, FInteractiveCapabilityConfig& OutConfig)
+{
+    if (!ConfigObject.IsValid())
+    {
+        return;
+    }
+    
+    // 解析允许的交互类型
+    const TArray<TSharedPtr<FJsonValue>>* InteractionsArray;
+    if (ConfigObject->TryGetArrayField(TEXT("allowed_interactions"), InteractionsArray))
+    {
+        OutConfig.AllowedInteractions = ParseInteractionTypes(*InteractionsArray);
+    }
+    
+    // 解析对话选项
+    const TSharedPtr<FJsonObject>* DialogueObject;
+    if (ConfigObject->TryGetObjectField(TEXT("dialogue_options"), DialogueObject) && DialogueObject->IsValid())
+    {
+        for (const auto& Pair : (*DialogueObject)->Values)
+        {
+            FString Value;
+            if (Pair.Value->TryGetString(Value))
+            {
+                OutConfig.DialogueOptions.Add(Pair.Key, Value);
+            }
+        }
+    }
+    
+    // 解析观察信息
+    const TSharedPtr<FJsonObject>* ObservableObject;
+    if (ConfigObject->TryGetObjectField(TEXT("observable_info"), ObservableObject) && ObservableObject->IsValid())
+    {
+        for (const auto& Pair : (*ObservableObject)->Values)
+        {
+            FString Value;
+            if (Pair.Value->TryGetString(Value))
+            {
+                OutConfig.ObservableInfo.Add(Pair.Key, Value);
+            }
+        }
+    }
+    
+    // 解析最大尝试次数
+    int32 MaxAttempts;
+    if (ConfigObject->TryGetNumberField(TEXT("max_attempts"), MaxAttempts))
+    {
+        OutConfig.MaxAttempts = MaxAttempts;
+    }
+}
+
+TArray<EInteractionType> USimpleNodeDataConverter::ParseInteractionTypes(const TArray<TSharedPtr<FJsonValue>>& JsonArray)
+{
+    TArray<EInteractionType> Result;
+    
+    for (const TSharedPtr<FJsonValue>& Value : JsonArray)
+    {
+        FString TypeString;
+        if (Value->TryGetString(TypeString))
+        {
+            EInteractionType Type = StringToInteractionType(TypeString);
+            if (Type != EInteractionType::Click || TypeString.Equals(TEXT("click"), ESearchCase::IgnoreCase))
+            {
+                Result.AddUnique(Type);
+            }
+        }
+    }
+    
+    return Result;
+}
+
+EInteractionType USimpleNodeDataConverter::StringToInteractionType(const FString& TypeString)
+{
+    if (TypeString.Equals(TEXT("click"), ESearchCase::IgnoreCase))
+    {
+        return EInteractionType::Click;
+    }
+    else if (TypeString.Equals(TEXT("hold"), ESearchCase::IgnoreCase))
+    {
+        return EInteractionType::Hold;
+    }
+    else if (TypeString.Equals(TEXT("drag"), ESearchCase::IgnoreCase))
+    {
+        return EInteractionType::Drag;
+    }
+    else if (TypeString.Equals(TEXT("hover"), ESearchCase::IgnoreCase))
+    {
+        return EInteractionType::Hover;
+    }
+    else if (TypeString.Equals(TEXT("multitouch"), ESearchCase::IgnoreCase))
+    {
+        return EInteractionType::MultiTouch;
+    }
+    else if (TypeString.Equals(TEXT("gesture"), ESearchCase::IgnoreCase))
+    {
+        return EInteractionType::Gesture;
+    }
+    
+    return EInteractionType::Click; // 默认
 }

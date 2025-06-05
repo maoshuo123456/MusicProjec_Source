@@ -222,8 +222,10 @@ AInteractiveNode* ANodeSystemManager::CreateNode(TSubclassOf<AInteractiveNode> N
                                 if (InteractiveCap)
                                 {
                                     // 应用交互能力配置
+                                    InteractiveCap->AllowedInteractions = CapData.InteractiveConfig.AllowedInteractions;
                                     InteractiveCap->ObservableInfo = CapData.InteractiveConfig.ObservableInfo;
                                     InteractiveCap->DialogueOptions = CapData.InteractiveConfig.DialogueOptions;
+                                    InteractiveCap->MaxAttempts = CapData.InteractiveConfig.MaxAttempts;
                                 }
                                 break;
                             }

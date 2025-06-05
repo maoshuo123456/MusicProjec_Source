@@ -54,6 +54,12 @@ void AMyProjectCharacter::BeginPlay()
 		}
 	}
 
+	if (!InteractionManager)
+	{
+		UE_LOG(LogTemp, Log, TEXT("InteractionManager component created failed"));
+	}
+
+
 }
 
 //////////////////////////////////////////////////////////////////////////// Input

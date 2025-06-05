@@ -72,21 +72,40 @@ public:
 	// Sets default values for this component's properties
 	UPlayerInteractionManager();
 
-	    // ========== 配置参数 ==========
+	// ========== 配置参数 ==========
+	// 交互范围
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|Settings")
-    float InteractionRange;                         // 交互范围
+    float InteractionRange;                         
 
+	// 长按持续时间
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|Settings")
-    float HoldDuration;                             // 长按持续时间
+    float HoldDuration;                             
 
+	// 拖拽阈值
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|Settings")
-    float DragThreshold;                            // 拖拽阈值
+    float DragThreshold;                            
 
+	// 启用调试射线
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|Settings")
-    bool bEnableDebugTrace;                         // 启用调试射线
+    bool bEnableDebugTrace;                         
 
+	// 射线检测通道
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|Settings")
-    TEnumAsByte<ECollisionChannel> TraceChannel;    // 射线检测通道
+    TEnumAsByte<ECollisionChannel> TraceChannel;    
+
+	//使用屏幕中心进行交互
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|Settings")
+	bool bUseScreenCenterForInteraction;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Interaction|Settings")
+	float ItemDistance;
+
+	// 准星UI类
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction|UI")
+	TSubclassOf<UUserWidget> CrosshairWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* CrosshairWidget;
 
     // ========== 当前状态 ==========
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction|State")
@@ -146,6 +165,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Interaction|Input")
     void OnMouseMove(const FVector2D& MousePosition);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Interaction|Trace")
+	FVector2D GetScreenCenter() const;
+
     // ========== 节点选择 ==========
     UFUNCTION(BlueprintCallable, Category = "Interaction|Selection")
     bool SelectNode(AItemNode* Node);
@@ -166,6 +188,9 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Interaction|Trace")
     bool ScreenToWorldTrace(const FVector2D& ScreenPosition, FVector& WorldLocation, FVector& WorldDirection) const;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Interaction|Trace")
+	AItemNode* TraceFromScreenCenter() const;
+	
     // ========== 交互处理 ==========
     UFUNCTION(BlueprintCallable, Category = "Interaction|Process")
     FInteractionResult ProcessInteraction(AItemNode* Node, EInteractionType Type, const FVector& Location);

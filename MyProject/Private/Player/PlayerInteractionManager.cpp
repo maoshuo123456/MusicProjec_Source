@@ -20,11 +20,13 @@ UPlayerInteractionManager::UPlayerInteractionManager()
     PrimaryComponentTick.bStartWithTickEnabled = true;
 
     // 默认配置
-    InteractionRange = 2000.0f;
+    InteractionRange = 10000.0f;
     HoldDuration = 0.8f;
     DragThreshold = 10.0f;
     bEnableDebugTrace = false;
     TraceChannel = ECC_Visibility;
+    bUseScreenCenterForInteraction = true; // 默认使用屏幕中心
+    ItemDistance = 300.f;
 
     // 初始状态
     CurrentState = EInteractionState::None;
@@ -50,6 +52,21 @@ void UPlayerInteractionManager::BeginPlay()
     
     // 缓存组件引用
     CacheComponents();
+
+    // 如果使用屏幕中心模式，创建并显示准星UI
+    if (bUseScreenCenterForInteraction && CrosshairWidgetClass && CachedPlayerController)
+    {
+        CrosshairWidget = CreateWidget<UUserWidget>(CachedPlayerController, CrosshairWidgetClass);
+        if (CrosshairWidget)
+        {
+            CrosshairWidget->AddToViewport(50); 
+            UE_LOG(LogTemp, Log, TEXT("Crosshair UI created and added to viewport"));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Failed to create Crosshair UI widget"));
+        }
+    }
     
     UE_LOG(LogTemp, Log, TEXT("PlayerInteractionManager initialized"));
 }
@@ -77,32 +94,61 @@ void UPlayerInteractionManager::TickComponent(float DeltaTime, ELevelTick TickTy
     }
 }
 
+FVector2D UPlayerInteractionManager::GetScreenCenter() const
+{
+    if (!CachedPlayerController)
+    {
+        return FVector2D::ZeroVector;
+    }
+    
+    int32 ViewportSizeX, ViewportSizeY;
+    CachedPlayerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
+    
+    return FVector2D(ViewportSizeX * 0.5f, ViewportSizeY * 0.5f);
+}
+
 void UPlayerInteractionManager::OnMouseButtonDown(bool bIsLeftButton)
 {
+    UE_LOG(LogTemp, Warning, TEXT("=== Mouse Button Down ==="));
+    
     if (!bIsLeftButton || bIsMouseButtonDown)
     {
         return;
     }
 
     bIsMouseButtonDown = true;
-    MouseDownPosition = LastMousePosition;
     
-    // 检测鼠标下的节点
-    AItemNode* HitNode = TraceForInteractiveNode(LastMousePosition);
+    // 根据配置选择检测位置
+    FVector2D InteractionPosition;
+    AItemNode* HitNode = nullptr;
+    
+    if (bUseScreenCenterForInteraction)
+    {
+        InteractionPosition = GetScreenCenter();
+        HitNode = TraceFromScreenCenter();
+    }
+    else
+    {
+        InteractionPosition = LastMousePosition;
+        HitNode = TraceForInteractiveNode(LastMousePosition);
+    }
+    
+    MouseDownPosition = InteractionPosition; // 更新记录的位置
     
     if (HitNode)
     {
+        UE_LOG(LogTemp, Warning, TEXT("Found HitNode: %s"), *HitNode->GetNodeName());
+        
         // 检查是否可以选择
-        if (CanNodeBeInteracted(HitNode, EInteractionType::Click))
+        bool bCanInteract = CanNodeBeInteracted(HitNode, EInteractionType::Click);
+        
+        if (bCanInteract)
         {
-            // 开始点击交互
             FVector WorldLocation;
             FVector WorldDirection;
-            if (ScreenToWorldTrace(LastMousePosition, WorldLocation, WorldDirection))
+            if (ScreenToWorldTrace(InteractionPosition, WorldLocation, WorldDirection))
             {
                 StartInteraction(HitNode, EInteractionType::Click);
-                
-                // 选择节点
                 SelectNode(HitNode);
                 
                 // 开始长按计时
@@ -117,7 +163,6 @@ void UPlayerInteractionManager::OnMouseButtonDown(bool bIsLeftButton)
     }
     else
     {
-        // 点击空白区域，取消选择
         DeselectCurrentNode();
     }
 }
@@ -236,6 +281,12 @@ void UPlayerInteractionManager::DeselectCurrentNode()
     UE_LOG(LogTemp, Log, TEXT("Deselected node: %s"), *PreviousNode->GetNodeName());
 }
 
+AItemNode* UPlayerInteractionManager::TraceFromScreenCenter() const
+{
+    FVector2D ScreenCenter = GetScreenCenter();
+    return TraceForInteractiveNode(ScreenCenter);
+}
+
 AItemNode* UPlayerInteractionManager::TraceForInteractiveNode(const FVector2D& ScreenPosition) const
 {
     if (!CachedPlayerController)
@@ -262,9 +313,12 @@ AItemNode* UPlayerInteractionManager::TraceForInteractiveNode(const FVector2D& S
         HitResult,
         TraceStart,
         TraceEnd,
-        TraceChannel,
+        TraceChannel, 
         QueryParams
     );
+
+    UE_LOG(LogTemp, Warning, TEXT("Trace from %s to %s"), *TraceStart.ToString(), *TraceEnd.ToString());
+    UE_LOG(LogTemp, Warning, TEXT("Hit result: %s"), bHit ? TEXT("TRUE") : TEXT("FALSE"));
 
     // 调试绘制
     if (bEnableDebugTrace)
@@ -280,11 +334,21 @@ AItemNode* UPlayerInteractionManager::TraceForInteractiveNode(const FVector2D& S
 
     if (bHit)
     {
+
+        AActor* HitActor = HitResult.GetActor();
+        UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), HitActor ? *HitActor->GetName() : TEXT("None"));
+        UE_LOG(LogTemp, Warning, TEXT("Hit Actor Class: %s"), HitActor ? *HitActor->GetClass()->GetName() : TEXT("None"));
+      
         // 检查命中的Actor是否是InteractiveNode
         AItemNode* HitNode = Cast<AItemNode>(HitResult.GetActor());
+        
         if (HitNode && HitNode->bIsInteractable)
         {
+            UE_LOG(LogTemp, Warning, TEXT("Found InteractiveNode: %s"), *HitNode->GetNodeName());
             return HitNode;
+        }else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No InteractiveNode found"));
         }
     }
 
@@ -298,12 +362,18 @@ bool UPlayerInteractionManager::ScreenToWorldTrace(const FVector2D& ScreenPositi
         return false;
     }
 
-    return UGameplayStatics::DeprojectScreenToWorld(
+    bool bSuccess = UGameplayStatics::DeprojectScreenToWorld(
         CachedPlayerController,
         ScreenPosition,
         WorldLocation,
         WorldDirection
     );
+
+    // UE_LOG(LogTemp, Warning, TEXT("Screen Position: %s"), *ScreenPosition.ToString());
+    // UE_LOG(LogTemp, Warning, TEXT("World Location: %s"), *WorldLocation.ToString());
+    // UE_LOG(LogTemp, Warning, TEXT("World Direction: %s"), *WorldDirection.ToString());
+    // UE_LOG(LogTemp, Warning, TEXT("Deproject Success: %s"), bSuccess ? TEXT("TRUE") : TEXT("FALSE"));
+    return bSuccess;
 }
 
 FInteractionResult UPlayerInteractionManager::ProcessInteraction(AItemNode* Node, EInteractionType Type, const FVector& Location)
@@ -365,11 +435,22 @@ float UPlayerInteractionManager::GetDistanceFromMouseDown() const
 void UPlayerInteractionManager::UpdateHoverState(float DeltaTime)
 {
     // 检测当前鼠标下的节点
-    AItemNode* HoveredNode = TraceForInteractiveNode(LastMousePosition);
+    AItemNode* HoveredNode = nullptr;
+    FVector2D HoverPosition;
+    
+    if (bUseScreenCenterForInteraction)
+    {
+        HoverPosition = GetScreenCenter();
+        HoveredNode = TraceFromScreenCenter();
+    }
+    else
+    {
+        HoverPosition = LastMousePosition;
+        HoveredNode = TraceForInteractiveNode(LastMousePosition);
+    }
 
     if (HoveredNode != CurrentHoveredNode)
     {
-        // 悬停状态发生变化
         if (CurrentHoveredNode)
         {
             HandleNodeUnhover();
@@ -377,7 +458,7 @@ void UPlayerInteractionManager::UpdateHoverState(float DeltaTime)
 
         if (HoveredNode && CanNodeBeInteracted(HoveredNode, EInteractionType::Hover))
         {
-            HandleNodeHover(HoveredNode, LastMousePosition);
+            HandleNodeHover(HoveredNode, HoverPosition);
         }
     }
 }
@@ -536,16 +617,30 @@ void UPlayerInteractionManager::UpdateDragging(AItemNode* Node, const FVector& N
         return;
     }
 
-    // 计算拖拽偏移
-    FVector CameraForward = CachedPlayerController->PlayerCameraManager->GetCameraRotation().Vector();
-    FVector ProjectedLocation = NewLocation + CameraForward * 500.0f; // 投射到相机前方500单位
-
-    // 更新节点位置
-    Node->SetActorLocation(ProjectedLocation);
-    LastDragLocation = ProjectedLocation;
+    // 如果使用屏幕中心模式，直接将节点放在相机前方
+    if (bUseScreenCenterForInteraction)
+    {
+        FVector CameraLocation = CachedPlayerController->PlayerCameraManager->GetCameraLocation();
+        FVector CameraForward = CachedPlayerController->PlayerCameraManager->GetCameraRotation().Vector();
+        FVector TargetLocation = CameraLocation + CameraForward * ItemDistance;
+        
+        Node->SetActorLocation(TargetLocation);
+        LastDragLocation = TargetLocation;
+        
+        UE_LOG(LogTemp, Verbose, TEXT("Dragging node to camera center position: %s"), *TargetLocation.ToString());
+    }
+    else
+    {
+        // 使用原来的鼠标位置计算逻辑
+        FVector CameraForward = CachedPlayerController->PlayerCameraManager->GetCameraRotation().Vector();
+        FVector ProjectedLocation = NewLocation + CameraForward * ItemDistance;
+        
+        Node->SetActorLocation(ProjectedLocation);
+        LastDragLocation = ProjectedLocation;
+    }
 
     // 处理拖拽交互
-    ProcessInteraction(Node, EInteractionType::Drag, ProjectedLocation);
+    ProcessInteraction(Node, EInteractionType::Drag, Node->GetActorLocation());
 }
 
 void UPlayerInteractionManager::EndDragging(AItemNode* Node)

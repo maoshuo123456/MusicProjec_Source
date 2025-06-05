@@ -87,6 +87,10 @@ public:
     float ComparisonThreshold;                      // 比对相似度阈值
 
     // ========== 配置数据 ==========
+
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category = "Interactive|Config")
+    TArray<EInteractionType> AllowedInteractions;
+    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interactive|Config")
     TMap<FString, FString> InteractionConfig;       // 动态配置参数
 
