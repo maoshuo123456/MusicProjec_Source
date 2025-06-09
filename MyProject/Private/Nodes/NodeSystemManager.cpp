@@ -9,12 +9,14 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "MyProject/MyProjectCharacter.h"
 #include "Nodes/Capabilities/InteractiveCapability.h"
 #include "Nodes/Capabilities/NarrativeCapability.h"
 #include "Nodes/Capabilities/NumericalCapability.h"
 #include "Nodes/Capabilities/SpatialCapability.h"
 #include "Nodes/Capabilities/StateCapability.h"
 #include "Nodes/Capabilities/SystemCapability.h"
+
 
 ANodeSystemManager::ANodeSystemManager()
 {
@@ -50,7 +52,7 @@ void ANodeSystemManager::BeginPlay()
     // 设置验证定时器
     // GetWorld()->GetTimerManager().SetTimer(ValidationTimerHandle,this,&ANodeSystemManager::ValidateSystem,5.0f,true);
 
-
+    BindPlayerInteractionEvents();
     UE_LOG(LogTemp, Log, TEXT("NodeSystemManager initialized"));
 }
 
@@ -495,6 +497,107 @@ TArray<AItemNode*> ANodeSystemManager::FindNodesWithCapability(TSubclassOf<UItem
     }
     
     return Result;
+}
+
+void ANodeSystemManager::OnPlayerNodeInteractionEvent(AItemNode* Node, EInteractionType Type, bool bIsStarting)
+{
+    if (bIsStarting)
+    {
+        OnInteractionStarted(Node, Type);
+    }
+    else
+    {
+        OnInteractionEnded(Node, Type);
+    }
+}
+
+void ANodeSystemManager::BindPlayerInteractionEvents()
+{
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    {
+        if (AMyProjectCharacter* Player = ((AMyProjectCharacter*)Cast<AMyProjectCharacter>(PC->GetPawn())))
+        {
+            if (UPlayerInteractionManager* InteractionManager = Player->GetInteractionManager())
+            {
+                // 绑定委托
+                InteractionManager->OnNodeInteraction.AddDynamic(this, &ANodeSystemManager::OnPlayerNodeInteractionEvent);
+            }
+        }
+    }
+}
+
+void ANodeSystemManager::OnInteractionStarted(AItemNode* Node, EInteractionType Type)
+{
+    // 根据类型分发
+    switch(Type)
+    {
+        case EInteractionType::Click:
+        case EInteractionType::Hold:
+            OnNodeSelected(Node);
+            break;
+        case EInteractionType::Hover:
+            OnNodeHoverStarted(Node);
+            break;
+        case EInteractionType::Drag:
+            OnNodeDragStarted(Node);
+            break;
+        default:
+            // 其他类型的交互
+            UE_LOG(LogTemp, Warning, TEXT("NodeSystemManager: Unknown interaction type"));
+            break;
+    }
+}
+
+void ANodeSystemManager::OnInteractionEnded(AItemNode* Node, EInteractionType Type)
+{
+    // 根据类型分发
+    switch(Type)
+    {
+    case EInteractionType::Click:
+    case EInteractionType::Hold:
+        OnNodeDeselected(Node);
+        break;
+    case EInteractionType::Hover:
+        OnNodeHoverEnded(Node);
+        break;
+    case EInteractionType::Drag:
+        OnNodeDragEnded(Node);
+        break;
+    default:
+        // 其他类型的交互
+        UE_LOG(LogTemp, Warning, TEXT("NodeSystemManager: Unknown interaction type"));
+        break;
+    }
+}
+
+void ANodeSystemManager::OnNodeSelected(AItemNode* Node)
+{
+    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s Selected"), *Node->GetNodeName());
+}
+
+void ANodeSystemManager::OnNodeDeselected(AItemNode* Node)
+{
+    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s Deselected"), *Node->GetNodeName());
+}
+
+void ANodeSystemManager::OnNodeDragStarted(AItemNode* Node)
+{
+    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s Drag"), *Node->GetNodeName());
+}
+
+void ANodeSystemManager::OnNodeDragEnded(AItemNode* Node)
+{
+    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s DragEnd"), *Node->GetNodeName());
+}
+
+void ANodeSystemManager::OnNodeHoverStarted(AItemNode* Node)
+{
+    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s Hover"), *Node->GetNodeName());
+}
+
+void ANodeSystemManager::OnNodeHoverEnded(AItemNode* Node)
+{
+    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s HoverEnd"), *Node->GetNodeName());
 }
 
 // 连接管理实现
@@ -1220,7 +1323,7 @@ void ANodeSystemManager::OnNodeInteracted(AInteractiveNode* Node, const FInterac
         return;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s interacted"), *Node->GetNodeID());
+    // UE_LOG(LogTemp, Log, TEXT("NodeSystemManager: Node %s interacted"), *Node->GetNodeID());
 
     // 传播系统事件
     FGameEventData EventData;

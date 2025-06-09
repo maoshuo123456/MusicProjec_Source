@@ -80,6 +80,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	bool GetHasRifle();
 
+	UFUNCTION(BlueprintCallable, Category = Interaction)
+	UPlayerInteractionManager* GetInteractionManager(){return InteractionManager;};
+
 protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);

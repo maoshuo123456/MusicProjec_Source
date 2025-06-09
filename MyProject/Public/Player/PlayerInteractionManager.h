@@ -55,12 +55,14 @@ struct FInteractionResult
 };
 
 // 委托声明
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNodeInteractionStarted, AItemNode*, Node, EInteractionType, Type);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNodeInteractionEnded, AItemNode*, Node, EInteractionType, Type);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNodeSelected, AItemNode*, Node);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNodeDeselected, AItemNode*, Node);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNodeHoverStarted, AItemNode*, Node, const FVector&, MouseLocation);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNodeHoverEnded, AItemNode*, Node);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnNodeInteractionEvent, AItemNode*, Node, EInteractionType, Type, bool, bIsStarting);
+
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNodeInteractionStarted, AItemNode*, Node, EInteractionType, Type);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNodeInteractionEnded, AItemNode*, Node, EInteractionType, Type);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNodeSelected, AItemNode*, Node);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNodeDeselected, AItemNode*, Node);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNodeHoverStarted, AItemNode*, Node, const FVector&, MouseLocation);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNodeHoverEnded, AItemNode*, Node);
 
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -128,24 +130,8 @@ public:
 
     // ========== 委托 ==========
     UPROPERTY(BlueprintAssignable, Category = "Interaction|Events")
-    FOnNodeInteractionStarted OnNodeInteractionStarted;
+    FOnNodeInteractionEvent OnNodeInteraction;
 
-    UPROPERTY(BlueprintAssignable, Category = "Interaction|Events")
-    FOnNodeInteractionEnded OnNodeInteractionEnded;
-
-    UPROPERTY(BlueprintAssignable, Category = "Interaction|Events")
-    FOnNodeSelected OnNodeSelected;
-
-    UPROPERTY(BlueprintAssignable, Category = "Interaction|Events")
-    FOnNodeDeselected OnNodeDeselected;
-
-    UPROPERTY(BlueprintAssignable, Category = "Interaction|Events")
-    FOnNodeHoverStarted OnNodeHoverStarted;
-
-    UPROPERTY(BlueprintAssignable, Category = "Interaction|Events")
-    FOnNodeHoverEnded OnNodeHoverEnded;
-
-	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

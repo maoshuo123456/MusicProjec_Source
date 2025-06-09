@@ -162,6 +162,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "System|Events")
     FOnSystemStateChanged OnSystemStateChanged;
 
+    
+
+
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -211,6 +214,37 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "System|Query")
     TArray<AItemNode*> FindNodesWithCapability(TSubclassOf<UItemCapability> CapabilityClass) const;
 
+    //玩家与节点交互
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void BindPlayerInteractionEvents();
+
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnPlayerNodeInteractionEvent(AItemNode* Node, EInteractionType Type, bool bIsStarting);
+
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnInteractionStarted(AItemNode* Node, EInteractionType Type);
+
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnInteractionEnded(AItemNode* Node, EInteractionType Type);
+    
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnNodeSelected(AItemNode* Node);
+    
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnNodeDeselected(AItemNode* Node);
+    
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnNodeDragStarted(AItemNode* Node);
+    
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnNodeDragEnded(AItemNode* Node);
+    
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnNodeHoverStarted(AItemNode* Node);
+    
+    UFUNCTION(BlueprintCallable, Category = "System|Interaction")
+    void OnNodeHoverEnded(AItemNode* Node);
+    
     // 连接管理
     UFUNCTION(BlueprintCallable, Category = "System|Connections")
     ANodeConnection* CreateConnection(AInteractiveNode* Source, AInteractiveNode* Target, const FNodeRelationData& RelationData);

@@ -257,9 +257,6 @@ bool UPlayerInteractionManager::SelectNode(AItemNode* Node)
     CurrentSelectedNode = Node;
     SetInteractionState(EInteractionState::Selected);
 
-    // 广播事件
-    OnNodeSelected.Broadcast(Node);
-
     UE_LOG(LogTemp, Log, TEXT("Selected node: %s"), *Node->GetNodeName());
     return true;
 }
@@ -274,9 +271,6 @@ void UPlayerInteractionManager::DeselectCurrentNode()
     AItemNode* PreviousNode = CurrentSelectedNode;
     CurrentSelectedNode = nullptr;
     SetInteractionState(EInteractionState::None);
-
-    // 广播事件
-    OnNodeDeselected.Broadcast(PreviousNode);
 
     UE_LOG(LogTemp, Log, TEXT("Deselected node: %s"), *PreviousNode->GetNodeName());
 }
@@ -512,8 +506,8 @@ void UPlayerInteractionManager::StartInteraction(AItemNode* Node, EInteractionTy
     {
         return;
     }
-
-    OnNodeInteractionStarted.Broadcast(Node, Type);
+    
+    OnNodeInteraction.Broadcast(CurrentHoveredNode,Type,true);
     UE_LOG(LogTemp, Log, TEXT("Started interaction: %s on %s"), 
         *UEnum::GetValueAsString(Type), *Node->GetNodeName());
 }
@@ -524,8 +518,7 @@ void UPlayerInteractionManager::EndInteraction(AItemNode* Node, EInteractionType
     {
         return;
     }
-
-    OnNodeInteractionEnded.Broadcast(Node, Type);
+    OnNodeInteraction.Broadcast(CurrentHoveredNode,Type,false);
     UE_LOG(LogTemp, Log, TEXT("Ended interaction: %s on %s"), 
         *UEnum::GetValueAsString(Type), *Node->GetNodeName());
 }
@@ -537,7 +530,7 @@ void UPlayerInteractionManager::SetInteractionState(EInteractionState NewState)
         EInteractionState OldState = CurrentState;
         CurrentState = NewState;
         
-        UE_LOG(LogTemp, Verbose, TEXT("Interaction state changed: %d -> %d"), 
+        UE_LOG(LogTemp, Log, TEXT("Interaction state changed: %d -> %d"), 
             (int32)OldState, (int32)NewState);
     }
 }
@@ -549,16 +542,15 @@ void UPlayerInteractionManager::HandleNodeHover(AItemNode* Node, const FVector2D
     FVector WorldLocation;
     FVector WorldDirection;
     ScreenToWorldTrace(MousePosition, WorldLocation, WorldDirection);
-    
-    OnNodeHoverStarted.Broadcast(Node, WorldLocation);
-    UE_LOG(LogTemp, Verbose, TEXT("Started hovering over node: %s"), *Node->GetNodeName());
+    OnNodeInteraction.Broadcast(Node,EInteractionType::Hover,true);
+    UE_LOG(LogTemp, Log, TEXT("Started hovering over node: %s"), *Node->GetNodeName());
 }
 
 void UPlayerInteractionManager::HandleNodeUnhover()
 {
     if (CurrentHoveredNode)
     {
-        OnNodeHoverEnded.Broadcast(CurrentHoveredNode);
+        OnNodeInteraction.Broadcast(CurrentHoveredNode,EInteractionType::Hover,false);
         UE_LOG(LogTemp, Verbose, TEXT("Stopped hovering over node: %s"), *CurrentHoveredNode->GetNodeName());
         CurrentHoveredNode = nullptr;
     }
